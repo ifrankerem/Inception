@@ -30,8 +30,9 @@ func run(){
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWUTS,
-	}
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS,
+		Unshareflags: syscall.CLONE_NEWNS, // creating a newspace for this container but exact copy of host but they dont know anything from each other
+	}	
 
 	if err := cmd.Run(); err != nil {
     fmt.Println("ERROR:", err)
@@ -40,9 +41,11 @@ func run(){
 }
 
 func child(){
-	fmt.Printf("Running %v\n", os.Args[2:])
+	fmt.Printf("Running %v as %d\n", os.Args[2:], os.Getpid())
 
 	syscall.Sethostname([]byte("container"))
+	syscall.Chroot("/home/kero/Desktop/Projeler/Inception/rootfs")
+	syscall.Chdir("/")
 	
 	cmd := exec.Command(os.Args[2],os.Args[3:]...)
 	cmd.Stdin = os.Stdin 
